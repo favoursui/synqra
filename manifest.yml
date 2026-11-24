@@ -22,6 +22,7 @@ app:
   # Run forge register to populate the app ID under your Atlassian account.
 permissions:
   scopes:
+    - storage:app
     - read:jira-work
     - write:jira-work
     - read:page:confluence
