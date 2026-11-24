@@ -4,7 +4,7 @@
 
 A context-integrity application for Atlassian workspaces. Synqra compares a user-selected Confluence reference with related Jira issues and surfaces evidence-backed potential contradictions before teams implement outdated requirements.
 
-## Status: v0.6: Rovo assistant
+## Status: v0.7: Saved findings
 
 - Compare one explicitly selected Confluence page with up to eight Jira issues, using bounded concurrent reads and current-user permissions.
 - Inspect and filter potential mismatches, see source evidence, and explore a graph of explicitly selected relationships.
@@ -15,6 +15,12 @@ A context-integrity application for Atlassian workspaces. Synqra compares a user
 - No Forge SQL, background jobs, semantic relationship discovery or automatic description changes yet.
 
 The user explicitly selects a reference; Synqra does not infer approval. Live installation, build and API behavior must still be verified on a development site.
+
+## Saved findings
+
+Save a structured conflict for personal follow-up from Overview or Conflicts. The server re-reads both sources under the current user's permissions and rejects stale evidence before saving. The record contains only the page ID, issue key, supported field and save timestamp. No quotes, values, source titles, or document bodies are persisted. A deterministic identity prevents duplicates, and saving again renews the 30-day expiry. Records are scoped to the current account and Forge installation.
+
+Refresh saved findings to re-read both sources under current permissions. The view shows five records at a time, ordered by storage key rather than date, with a cursor for additional records. Unreadable pairs reveal no source identifiers or evidence. A missing finding is labeled not detected, not resolved, because the field may have disappeared or become unsupported. Removing a record deletes only the personal bookmark. No source data or comments are modified. KVS queries may be eventually consistent. Demo data and AI candidates are not saved. No new scopes are required.
 
 ## Synqra Assistant
 
@@ -102,7 +108,7 @@ Scan the pair. Review the three findings and their evidence. Preview a review co
 ## Next milestones
 
 1. Verify install, permissions, live scan, and frontend build in the development environment; commit the generated dependency lockfile.
-2. Verify personal history on a live Forge installation and add permission-aware conflict history.
+2. Verify personal history and saved findings on a live Forge installation.
 3. Verify link discovery against real Confluence pages; add additional relationship sources.
 4. Verify Forge LLMs and the Rovo agent on a live installation.
 5. Add durable review state and idempotency, authorized resolution, background events, and discovered dependency relationships.
@@ -122,4 +128,4 @@ Submit changes via a feature branch and pull request. Include the implementation
 
 ## Verification
 
-The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. The full Node suite has not been rerun for v0.6. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.
+The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. The full Node suite has not been rerun for v0.7. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.

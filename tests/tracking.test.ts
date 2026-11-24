@@ -1,0 +1,15 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {makeRecord,recordIdentity,isFresh,currentState,validToken} from '../shared/tracking.mjs';
+const pair={"pageId":"10001","issueKey":"CAD-102"};
+const f={"id":"10001:CAD-102:api version","field":"api version","severity":"high","expected":"v2","actual":"v1","evidence":["API version: v2","API version: v1"],"issueTitle":"private title"};
+const at="2026-11-24T00:00:00.000Z";
+test("stores only locator metadata",()=>assert.equal((()=>JSON.stringify(makeRecord(pair,f,at))===JSON.stringify({...pair,field:"api version",savedAt:at}))(),true));
+test("rejects mismatched finding identity",()=>assert.equal((()=>{try{makeRecord(pair,{...f,id:'different'},at);return false}catch{return true}})(),true));
+test("rejects unsupported fields",()=>assert.equal((()=>{try{makeRecord(pair,{...f,field:'secret'},at);return false}catch{return true}})(),true));
+test("identity ignores save timestamp",()=>assert.equal((()=>recordIdentity(makeRecord(pair,f,at))===recordIdentity(makeRecord(pair,f,'2026-11-25T00:00:00Z')))(),true));
+test("different fields have different identities",()=>assert.equal((()=>recordIdentity(makeRecord(pair,f,at))!==recordIdentity(makeRecord(pair,{...f,id:'10001:CAD-102:release date',field:'release date'},at)))(),true));
+test("expires at thirty days and rejects future times",()=>assert.equal((()=>!isFresh(makeRecord(pair,f,at),Date.parse(at)+30*86400000)&&!isFresh(makeRecord(pair,f,at),Date.parse(at)-1)&&isFresh(makeRecord(pair,f,at),Date.parse(at)))(),true));
+test("returns fresh evidence only for the tracked field",()=>assert.equal((()=>{const s=currentState(makeRecord(pair,f,at),[{...f,field:'release date'},f]);return s.status==='detected'&&s.finding.actual==='v1'&&!JSON.stringify(s).includes('private title')})(),true));
+test("missing finding is not a resolution",()=>assert.equal((()=>currentState(makeRecord(pair,f,at),[]).status==='not_detected')(),true));
+test("accepts only opaque hash tokens",()=>assert.equal((()=>validToken('a'.repeat(64))&&!validToken('../other')&&!validToken('a'.repeat(65)))(),true));

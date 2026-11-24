@@ -7,6 +7,8 @@ import {saveHistory,listHistory,newHistoryId} from './history';
 import {discoverIssueLinks} from '../shared/discovery';
 import {analyzePair} from './semantic';
 import {pairInput,agentReport} from '../shared/rovo.mjs';
+import {makeRecord,currentState} from '../shared/tracking.mjs';
+import {saveTracked,listTracked,removeTracked} from './tracking';
 const resolver=new Resolver();
 function validatePage(value:unknown){const id=String(value??'').trim();if(!/^\d{1,24}$/.test(id))throw Error('Enter a numeric Confluence page ID.');return id;}
 async function readPageDocument(pageId:string){
@@ -61,6 +63,41 @@ resolver.define('requestReview',async ({payload,context})=>{
  const comment=await response.json();
  const historySaved=await saveHistory(context.accountId,reviewSummary(newHistoryId(),new Date().toISOString()));
  return {commentId:String(comment.id),issueId:issue.id,historySaved};
+});
+resolver.define('saveFinding',async ({payload,context})=>{
+ const pair=pairInput(payload);
+ const [spec,issue]=await Promise.all([readPage(pair.pageId),readIssue(pair.issueKey)]);
+ const current=assemble(spec,[issue]).findings.find(f=>f.id===payload?.finding?.id);
+ assertUnchanged(current,payload?.finding);
+ const record=makeRecord({pageId:spec.id,issueKey:issue.id},current,new Date().toISOString());
+ return {token:await saveTracked(context.accountId,record)};
+});
+resolver.define('listSavedFindings',async ({payload,context})=>{
+ const page=await listTracked(context.accountId,payload?.cursor);
+ // Cache within this invocation only, and never substitute app-level access.
+ const pages=new Map<string,Promise<Source>>(),issues=new Map<string,Promise<Source>>();
+ const rows=[];
+ for(let i=0;i<page.entries.length;i+=2){
+  const batch=page.entries.slice(i,i+2);
+  rows.push(...await Promise.all(batch.map(async ({token,record})=>{
+   try{
+    const pair=pairInput(record);
+    if(!pages.has(pair.pageId))pages.set(pair.pageId,readPage(pair.pageId));
+    if(!issues.has(pair.issueKey))issues.set(pair.issueKey,readIssue(pair.issueKey));
+    const [spec,issue]=await Promise.all([pages.get(pair.pageId)!,issues.get(pair.issueKey)!]);
+    if(spec.text.length>60000||issue.text.length>60000||!spec.text.trim()||!issue.text.trim())throw Error('Source unavailable for comparison.');
+    return {token,savedAt:record.savedAt,pageId:spec.id,issueKey:issue.id,field:record.field,...currentState(record,assemble(spec,[issue]).findings)};
+   }catch{
+    // Return no identifiers or evidence when either resource cannot be read.
+    return {token,savedAt:record.savedAt,status:'unavailable'};
+   }
+  })));
+ }
+ return {rows,nextCursor:page.nextCursor,checkedAt:new Date().toISOString()};
+});
+resolver.define('removeSavedFinding',async ({payload,context})=>{
+ await removeTracked(context.accountId,payload?.token);
+ return {removed:true};
 });
 resolver.define('listHistory',async ({context})=>listHistory(context.accountId));
 // Rovo action: read only. Never fall back to app-level access or write history.
