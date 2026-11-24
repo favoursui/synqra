@@ -6,6 +6,7 @@ import {scanSummary,reviewSummary} from '../shared/history';
 import {saveHistory,listHistory,newHistoryId} from './history';
 import {discoverIssueLinks} from '../shared/discovery';
 import {analyzePair} from './semantic';
+import {pairInput,agentReport} from '../shared/rovo.mjs';
 const resolver=new Resolver();
 function validatePage(value:unknown){const id=String(value??'').trim();if(!/^\d{1,24}$/.test(id))throw Error('Enter a numeric Confluence page ID.');return id;}
 async function readPageDocument(pageId:string){
@@ -62,4 +63,16 @@ resolver.define('requestReview',async ({payload,context})=>{
  return {commentId:String(comment.id),issueId:issue.id,historySaved};
 });
 resolver.define('listHistory',async ({context})=>listHistory(context.accountId));
+// Rovo action: read only. Never fall back to app-level access or write history.
+export async function compareForRovo(payload:unknown){
+ let pair;
+ try{pair=pairInput(payload);}catch{return {status:'invalid_input',message:'Provide a numeric Confluence page ID and one Jira issue key.'};}
+ try{
+  const [spec,issue]=await Promise.all([readPage(pair.pageId),readIssue(pair.issueKey)]);
+  if(spec.text.length>60000||issue.text.length>60000)return {status:'unavailable',message:'Source too large. Select a smaller reference.'};
+  if(!spec.text.trim()||!issue.text.trim())return {status:'unavailable',message:'Both sources need readable text.'};
+  const result=assemble(spec,[issue]);
+  return agentReport({pageId:spec.id,issueKey:issue.id},result.findings);
+ }catch{return {status:'unavailable',message:'Unable to compare both sources. Check the IDs, installation and your permissions.'};}
+}
 export const handler=resolver.getDefinitions();
