@@ -4,7 +4,7 @@
 
 A context-integrity application for Atlassian workspaces. Synqra compares a user-selected Confluence reference with related Jira issues and surfaces evidence-backed potential contradictions before teams implement outdated requirements.
 
-## Status: v0.8: Change monitoring
+## Status: v0.9: Interactive context map
 
 - Compare one explicitly selected Confluence page with up to eight Jira issues, using bounded concurrent reads and current-user permissions.
 - Inspect and filter potential mismatches, see source evidence, and explore a graph of explicitly selected relationships.
@@ -15,6 +15,10 @@ A context-integrity application for Atlassian workspaces. Synqra compares a user
 - No Forge SQL, unattended conflict scans, semantic relationship discovery or automatic description changes yet.
 
 The user explicitly selects a reference; Synqra does not infer approval. Live installation, build and API behavior must still be verified on a development site.
+
+## Context map
+
+Open Context after a scan to explore the reference and every selected Jira issue, including unavailable issues. The map groups structured findings by issue and provides search, severity filters and resource selection. The details panel shows exact scan evidence values and opens the existing conflict review flow. Source links are available in live mode. Unavailable resources are clearly distinguished from readable issues without detected findings. This is a snapshot of explicit comparisons, not an inferred dependency graph or a live permission check. Run a new scan to refresh it. AI suggestions are not included.
 
 ## Source change monitoring
 
@@ -138,4 +142,4 @@ Submit changes via a feature branch and pull request. Include the implementation
 
 ## Verification
 
-The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. Ten monitoring helper checks passed in the development runtime. The full Node suite has not been rerun for v0.8. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.
+The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. Ten monitoring helper checks passed in the development runtime. Ten context-map helper checks passed in the development runtime. The full Node suite has not been rerun for v0.9. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.
