@@ -1,6 +1,6 @@
 {
   "name": "synqra",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "vite --config web/vite.config.ts",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@forge/api": "latest",
+    "@forge/kvs": "latest",
     "@forge/bridge": "latest",
     "@forge/resolver": "latest",
     "react": "^19.0.0",

@@ -4,7 +4,7 @@
 
 A context-integrity application for Atlassian workspaces. Synqra compares a user-selected Confluence reference with related Jira issues and surfaces evidence-backed potential contradictions before teams implement outdated requirements.
 
-## Status: v0.2 — scan and review workflow
+## Status: v0.3: Personal scan history
 
 - Compare one explicitly selected Confluence page with up to eight Jira issues, using bounded concurrent reads and current-user permissions.
 - Inspect and filter potential mismatches, see source evidence, and explore a graph of explicitly selected relationships.
@@ -15,6 +15,10 @@ A context-integrity application for Atlassian workspaces. Synqra compares a user
 - No Forge SQL, Rovo, background jobs, automatic relationship discovery or automatic description changes yet.
 
 The user explicitly selects a reference; Synqra does not infer approval. Live installation, build and API behavior must still be verified on a development site.
+
+## Personal history
+
+Live scans and successful Jira review requests save personal activity summaries in Forge KVS. Records are scoped to the authenticated user and installation, expire after 30 days, and the Activity page displays up to 20 recent events. No source IDs, titles, evidence, or comment bodies are retained in history. History writes are best effort; a failure does not undo a completed scan or comment. Refresh may be needed because KVS queries are eventually consistent. Demo data is never persisted. Upgrade the Forge installation to grant the new `storage:app` scope.
 
 ## Local development
 
@@ -73,16 +77,16 @@ Scan the pair. Review the three findings and their evidence. Preview a review co
 
 ## Architecture
 
-- `shared/engine.ts` – pure comparison and Atlassian Document Format text extraction.
-- `src/index.ts` – Forge resolver; access as the current user, validates IDs, fetches bounded batches and posts explicitly authorized review comments.
-- `web/` – React dashboard, Vite build, responsive CSS.
-- `shared/workflow.ts` – batch aggregation, validation, stale-evidence guards and review comment generation.
-- `tests/` – Node test runner covering the rule engine and review workflow.
+- `shared/engine.ts` - pure comparison and Atlassian Document Format text extraction.
+- `src/index.ts` - Forge resolver; access as the current user, validates IDs, fetches bounded batches and posts explicitly authorized review comments.
+- `web/` - React dashboard, Vite build, responsive CSS.
+- `shared/workflow.ts` - batch aggregation, validation, stale-evidence guards and review comment generation.
+- `tests/` - Node test runner covering the rule engine and review workflow.
 
 ## Next milestones
 
 1. Verify install, permissions, live scan, and frontend build in the development environment; commit the generated dependency lockfile.
-2. Add persistent scans and conflict history with permission-aware reads.
+2. Verify personal history on a live Forge installation and add permission-aware conflict history.
 3. Discover explicit links between Jira issues and Confluence pages; support bounded scans.
 4. Add Forge LLM semantic comparisons with strict evidence validation and Rovo agent actions.
 5. Add durable review state and idempotency, authorized resolution, background events, and discovered dependency relationships.
@@ -102,4 +106,4 @@ Submit changes via a feature branch and pull request. Include the implementation
 
 ## Verification
 
-All 10 rule-engine and workflow tests passed under Node.js 22.16.0. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.
+All 14 rule-engine, workflow and history tests passed under Node.js 22.16.0. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.
