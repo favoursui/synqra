@@ -1,0 +1,27 @@
+modules:
+  jira:globalPage:
+    - key: synqra-dashboard
+      resource: main
+      resolver:
+        function: resolver
+      title: Synqra
+  function:
+    - key: resolver
+      handler: index.handler
+resources:
+  - key: main
+    path: web/dist
+app:
+  runtime:
+    name: nodejs22.x
+  compatibility:
+    jira:
+      required: true
+    confluence:
+      required: false
+  # Run forge register to populate the app ID under your Atlassian account.
+permissions:
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - read:page:confluence
