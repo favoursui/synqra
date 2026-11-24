@@ -4,7 +4,7 @@
 
 A context-integrity application for Atlassian workspaces. Synqra compares a user-selected Confluence reference with related Jira issues and surfaces evidence-backed potential contradictions before teams implement outdated requirements.
 
-## Status: v0.3: Personal scan history
+## Status: v0.4: Link discovery
 
 - Compare one explicitly selected Confluence page with up to eight Jira issues, using bounded concurrent reads and current-user permissions.
 - Inspect and filter potential mismatches, see source evidence, and explore a graph of explicitly selected relationships.
@@ -12,9 +12,13 @@ A context-integrity application for Atlassian workspaces. Synqra compares a user
 - Preview the exact comment before submitting. Only share Confluence evidence with Jira audiences authorized to see it. Jira comments may be visible to users who cannot read the original Confluence page; the user must confirm sharing is appropriate.
 - Local demo simulates review actions and never writes to Jira. Current-scan activity and dismissals are in memory; live comments persist in Jira. Rescanning resets session review state. Check the existing issue comments before retrying a failed or ambiguous response; no durable idempotency is implemented.
 - Five structured fields are supported: maximum slippage, session timeout, API version, release date, and authentication method. The engine is rule-based, not semantic AI. Unsupported, duplicate or missing fields are not assessed; no findings does not establish alignment.
-- No Forge SQL, Rovo, background jobs, automatic relationship discovery or automatic description changes yet.
+- No Forge SQL, Rovo, background jobs, semantic relationship discovery or automatic description changes yet.
 
 The user explicitly selects a reference; Synqra does not infer approval. Live installation, build and API behavior must still be verified on a development site.
+
+## Find linked Jira issues
+
+Enter a Confluence page ID and select Find linked issues. Synqra reads the page as the current user, inspects Jira link marks and smart links, and verifies link origins against Jira server metadata. It suggests up to eight unique keys in the editable scan field. Review the selection before running a scan. Cross-site links and unlinked text mentions are ignored. No linked URL is fetched directly. Link discovery does not establish approval, dependency or issue accessibility. Each issue is read separately under the current user when a scan runs. Demo discovery uses fictional link cards. No new scopes are required.
 
 ## Personal history
 
@@ -87,7 +91,7 @@ Scan the pair. Review the three findings and their evidence. Preview a review co
 
 1. Verify install, permissions, live scan, and frontend build in the development environment; commit the generated dependency lockfile.
 2. Verify personal history on a live Forge installation and add permission-aware conflict history.
-3. Discover explicit links between Jira issues and Confluence pages; support bounded scans.
+3. Verify link discovery against real Confluence pages; add additional relationship sources.
 4. Add Forge LLM semantic comparisons with strict evidence validation and Rovo agent actions.
 5. Add durable review state and idempotency, authorized resolution, background events, and discovered dependency relationships.
 6. Test realistic workspaces and prepare the hackathon demonstration.
@@ -106,4 +110,4 @@ Submit changes via a feature branch and pull request. Include the implementation
 
 ## Verification
 
-All 14 rule-engine, workflow and history tests passed under Node.js 22.16.0. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.
+All 20 rule-engine, workflow, history and discovery tests passed under Node.js 22.16.0. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.
