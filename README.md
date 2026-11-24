@@ -4,7 +4,7 @@
 
 A context-integrity application for Atlassian workspaces. Synqra compares a user-selected Confluence reference with related Jira issues and surfaces evidence-backed potential contradictions before teams implement outdated requirements.
 
-## Status: v0.7: Saved findings
+## Status: v0.8: Change monitoring
 
 - Compare one explicitly selected Confluence page with up to eight Jira issues, using bounded concurrent reads and current-user permissions.
 - Inspect and filter potential mismatches, see source evidence, and explore a graph of explicitly selected relationships.
@@ -12,9 +12,19 @@ A context-integrity application for Atlassian workspaces. Synqra compares a user
 - Preview the exact comment before submitting. Only share Confluence evidence with Jira audiences authorized to see it. Jira comments may be visible to users who cannot read the original Confluence page; the user must confirm sharing is appropriate.
 - Local demo simulates review actions and never writes to Jira. Current-scan activity and dismissals are in memory; live comments persist in Jira. Rescanning resets session review state. Check the existing issue comments before retrying a failed or ambiguous response; no durable idempotency is implemented.
 - Five structured fields are supported: maximum slippage, session timeout, API version, release date, and authentication method. The base scan is rule-based, with an optional read-only semantic analysis. Unsupported, duplicate or missing fields are not assessed; no findings does not establish alignment.
-- No Forge SQL, background jobs, semantic relationship discovery or automatic description changes yet.
+- No Forge SQL, unattended conflict scans, semantic relationship discovery or automatic description changes yet.
 
 The user explicitly selects a reference; Synqra does not infer approval. Live installation, build and API behavior must still be verified on a development site.
+
+## Source change monitoring
+
+Saving a finding also registers its Confluence page and Jira issue (stable numeric IDs) for update monitoring. Forge product events can arrive when the dashboard is closed. The handler only looks up registered resource hashes and records the receipt timestamp. It does not persist event bodies, user IDs, source contents or raw resource IDs in the monitoring keys or values. Unregistered resources are ignored. Watch registrations and receipts expire after 30 days; expiry is checked explicitly because physical deletion may lag. Removing a personal bookmark does not immediately remove shared resource markers, which may still serve other saved findings.
+
+Refreshing Saved findings re-reads both resources with current-user access before exposing any monitoring signal or evidence. The signal describes an update event received since the record was saved, not necessarily a requirement change or new conflict. Duplicate and delayed events may produce conservative warnings; missed events and registration races are possible. No received event does not prove no changes. Existing records need to be saved again to register monitoring. No offline user impersonation, background source fetches, automatic comments or AI calls are used.
+
+The manifest adds the read-only `read:confluence-content.summary` scope and Jira and Confluence update triggers. Upgrade the installed app and connect both products on the same site. Test by saving a finding, closing Synqra, editing the page or issue, then refreshing saved findings. Test expired registrations, duplicate events, and revoked source access. Confirm event delivery and shared installation storage on a live developer site.
+
+References: https://developer.atlassian.com/platform/forge/events-reference/jira/ and https://developer.atlassian.com/platform/forge/events-reference/confluence/.
 
 ## Saved findings
 
@@ -111,7 +121,7 @@ Scan the pair. Review the three findings and their evidence. Preview a review co
 2. Verify personal history and saved findings on a live Forge installation.
 3. Verify link discovery against real Confluence pages; add additional relationship sources.
 4. Verify Forge LLMs and the Rovo agent on a live installation.
-5. Add durable review state and idempotency, authorized resolution, background events, and discovered dependency relationships.
+5. Verify update event delivery and add durable review state, idempotency, authorized resolution and discovered dependency relationships.
 6. Test realistic workspaces and prepare the hackathon demonstration.
 
 ## Contribution workflow
@@ -128,4 +138,4 @@ Submit changes via a feature branch and pull request. Include the implementation
 
 ## Verification
 
-The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. The full Node suite has not been rerun for v0.7. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.
+The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. Ten monitoring helper checks passed in the development runtime. The full Node suite has not been rerun for v0.8. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.

@@ -9,6 +9,8 @@ import {analyzePair} from './semantic';
 import {pairInput,agentReport} from '../shared/rovo.mjs';
 import {makeRecord,currentState} from '../shared/tracking.mjs';
 import {saveTracked,listTracked,removeTracked} from './tracking';
+import {registerMonitoring,checkMonitoring} from './monitoring';
+export {recordSourceUpdate} from './monitoring';
 const resolver=new Resolver();
 function validatePage(value:unknown){const id=String(value??'').trim();if(!/^\d{1,24}$/.test(id))throw Error('Enter a numeric Confluence page ID.');return id;}
 async function readPageDocument(pageId:string){
@@ -31,7 +33,7 @@ resolver.define('discoverIssues',async ({payload})=>{
 async function readIssue(key:string):Promise<Source>{
  const j=await api.asUser().requestJira(route`/rest/api/3/issue/${key}?fields=summary,description`,{headers:{Accept:'application/json'}});
  if(!j.ok)throw Error(`Unable to read Jira issue (${j.status}).`);
- const issue=await j.json();return {kind:'Jira',id:issue.key,title:issue.fields.summary,text:adfText(issue.fields.description)};
+ const issue=await j.json();return {kind:'Jira',id:issue.key,resourceId:String(issue.id??''),title:issue.fields.summary,text:adfText(issue.fields.description)};
 }
 resolver.define('scanWorkspace',async ({payload,context})=>{
  const keys=parseIssueKeys(payload?.issueKeys),page=validatePage(payload?.pageId),spec=await readPage(page);
@@ -70,7 +72,9 @@ resolver.define('saveFinding',async ({payload,context})=>{
  const current=assemble(spec,[issue]).findings.find(f=>f.id===payload?.finding?.id);
  assertUnchanged(current,payload?.finding);
  const record=makeRecord({pageId:spec.id,issueKey:issue.id},current,new Date().toISOString());
- return {token:await saveTracked(context.accountId,record)};
+ const token=await saveTracked(context.accountId,record);
+ const monitoringRegistered=await registerMonitoring(spec.id,issue.resourceId);
+ return {token,monitoringRegistered};
 });
 resolver.define('listSavedFindings',async ({payload,context})=>{
  const page=await listTracked(context.accountId,payload?.cursor);
@@ -86,7 +90,8 @@ resolver.define('listSavedFindings',async ({payload,context})=>{
     if(!issues.has(pair.issueKey))issues.set(pair.issueKey,readIssue(pair.issueKey));
     const [spec,issue]=await Promise.all([pages.get(pair.pageId)!,issues.get(pair.issueKey)!]);
     if(spec.text.length>60000||issue.text.length>60000||!spec.text.trim()||!issue.text.trim())throw Error('Source unavailable for comparison.');
-    return {token,savedAt:record.savedAt,pageId:spec.id,issueKey:issue.id,field:record.field,...currentState(record,assemble(spec,[issue]).findings)};
+    const monitoring=await checkMonitoring(spec.id,issue.resourceId,record.savedAt);
+    return {token,savedAt:record.savedAt,pageId:spec.id,issueKey:issue.id,field:record.field,monitoring,...currentState(record,assemble(spec,[issue]).findings)};
    }catch{
     // Return no identifiers or evidence when either resource cannot be read.
     return {token,savedAt:record.savedAt,status:'unavailable'};

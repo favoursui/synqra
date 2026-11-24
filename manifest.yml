@@ -1,4 +1,13 @@
 modules:
+  trigger:
+    - key: monitor-jira-updates
+      function: source-update
+      events:
+        - avi:jira:updated:issue
+    - key: monitor-confluence-updates
+      function: source-update
+      events:
+        - avi:confluence:updated:page
   rovo:agent:
     - key: synqra-agent
       name: Synqra Assistant
@@ -50,6 +59,8 @@ modules:
       handler: index.handler
     - key: rovo-compare
       handler: index.compareForRovo
+    - key: source-update
+      handler: index.recordSourceUpdate
 resources:
   - key: main
     path: web/dist
@@ -68,3 +79,4 @@ permissions:
     - read:jira-work
     - write:jira-work
     - read:page:confluence
+    - read:confluence-content.summary

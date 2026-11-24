@@ -1,0 +1,14 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {resource,eventResource,watchActive,observedAfter,monitoringState} from '../shared/monitoring.mjs';
+const now=Date.parse('2026-11-24T12:00:00Z'),savedAt='2026-11-24T11:00:00Z',watch={expiresAt:now+1000};
+test("extracts only numeric Jira issue ID",()=>assert.equal((()=>JSON.stringify(eventResource({eventType:'avi:jira:updated:issue',issue:{id:'12345',key:'CAD-1',fields:{description:'secret'}}}))===JSON.stringify({kind:'jira',id:'12345'}))(),true));
+test("extracts Confluence page ID",()=>assert.equal((()=>JSON.stringify(eventResource({eventType:'avi:confluence:updated:page',content:{id:987,title:'secret'}}))===JSON.stringify({kind:'confluence',id:'987'}))(),true));
+test("rejects unrelated events",()=>assert.equal((()=>eventResource({eventType:'avi:jira:created:issue',issue:{id:'123'}})===null)(),true));
+test("rejects malformed IDs",()=>assert.equal((()=>resource('jira','CAD-1')===null&&resource('jira','../123')===null&&resource('jira',9007199254740992)===null&&resource('other','1')===null)(),true));
+test("uses explicit expiration even if storage has not deleted record",()=>assert.equal((()=>!watchActive({expiresAt:now},now)&&watchActive(watch,now))(),true));
+test("flags update receipts after save",()=>assert.equal((()=>monitoringState([watch,watch],[null,{receivedAt:now}],savedAt,now)==='update_received')(),true));
+test("ignores older and future markers",()=>assert.equal((()=>monitoringState([watch,watch],[{receivedAt:now-7200000},{receivedAt:now+1}],savedAt,now)==='no_update_received')(),true));
+test("distinguishes missing registration",()=>assert.equal((()=>monitoringState([watch,null],[null,null],savedAt,now)==='not_registered')(),true));
+test("does not report no changes for invalid baseline",()=>assert.equal((()=>monitoringState([watch,watch],[null,null],'invalid',now)==='unavailable')(),true));
+test("does not use expired event receipts",()=>assert.equal((()=>!observedAfter({receivedAt:now-31*86400000},'2026-10-01T00:00:00Z',now))(),true));
