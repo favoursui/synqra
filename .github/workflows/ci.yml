@@ -21,3 +21,5 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Build frontend
         run: npm run build
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high

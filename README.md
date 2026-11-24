@@ -4,17 +4,21 @@
 
 A context-integrity application for Atlassian workspaces. Synqra compares a user-selected Confluence reference with related Jira issues and surfaces evidence-backed potential contradictions before teams implement outdated requirements.
 
-## Status: v0.10: Workspace UI and verification
+## Status: v0.11: Release hardening
 
 - Compare one explicitly selected Confluence page with up to eight Jira issues, using bounded concurrent reads and current-user permissions.
 - Inspect and filter potential mismatches, see source evidence, and explore a graph of explicitly selected relationships.
 - Request review by posting an evidence-backed Jira comment after explicit confirmation; the backend re-fetches both sources and rejects stale evidence. The issue description is never modified.
 - Preview the exact comment before submitting. Only share Confluence evidence with Jira audiences authorized to see it. Jira comments may be visible to users who cannot read the original Confluence page; the user must confirm sharing is appropriate.
-- Local demo simulates review actions and never writes to Jira. Current-scan activity and dismissals are in memory; live comments persist in Jira. Rescanning resets session review state. Check the existing issue comments before retrying a failed or ambiguous response; no durable idempotency is implemented.
+- Local demo simulates review actions and never writes to Jira. Current-scan activity and dismissals are in memory; live comments persist in Jira. Rescanning resets session review state. Check Jira before retrying a failed or ambiguous response. A hashed atomic reservation blocks identical same-account review requests while the reservation exists (configured for one day; storage deletion can lag).
 - Five structured fields are supported: maximum slippage, session timeout, API version, release date, and authentication method. The base scan is rule-based, with an optional read-only semantic analysis. Unsupported, duplicate or missing fields are not assessed; no findings does not establish alignment.
 - No Forge SQL, unattended conflict scans, semantic relationship discovery or automatic description changes yet.
 
 The user explicitly selects a reference; Synqra does not infer approval. Live installation, build and API behavior must still be verified on a development site.
+
+## Release hardening
+
+Review requests validate fresh evidence and comment size, then acquire an atomic Forge KVS reservation before posting. The reservation uses a hash of the account, stable source identifiers and exact mismatch evidence; it stores no raw evidence. Storage failure blocks the write. The reservation is not released after an ambiguous response because Jira may already have accepted the comment. This is bounded duplicate protection, not a permanent exactly-once guarantee, and does not prevent another user from requesting review. See [the development release checklist](docs/RELEASE_CHECKLIST.md).
 
 ## Workspace UI
 
@@ -146,4 +150,4 @@ Submit changes via a feature branch and pull request. Include the implementation
 
 ## Verification
 
-The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. Ten monitoring helper checks passed in the development runtime. Ten context-map helper checks passed in the development runtime. Five new presentation helper checks passed in the development runtime. The full Node suite has not been rerun for v0.10. React build, Forge lint, deployment and live API calls have not yet been verified in the development environment.
+The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. Ten monitoring helper checks passed in the development runtime. Ten context-map helper checks passed in the development runtime. Five new presentation helper checks passed in the development runtime. The v0.10 GitHub Actions run passed the full shared test suite, dependency installation and frontend production build. Eleven new review guard checks passed in the development runtime. CI for v0.11, Forge lint, deployment and live API calls require separate verification.
