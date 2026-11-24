@@ -1,4 +1,8 @@
 modules:
+  llm:
+    - key: semantic-analysis
+      model:
+        - claude
   jira:globalPage:
     - key: synqra-dashboard
       resource: main

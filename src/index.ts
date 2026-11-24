@@ -4,15 +4,27 @@ import {adfText,type Source} from '../shared/engine';
 import {parseIssueKeys,assemble,assertUnchanged,reviewText,commentBody} from '../shared/workflow';
 import {scanSummary,reviewSummary} from '../shared/history';
 import {saveHistory,listHistory,newHistoryId} from './history';
+import {discoverIssueLinks} from '../shared/discovery';
+import {analyzePair} from './semantic';
 const resolver=new Resolver();
 function validatePage(value:unknown){const id=String(value??'').trim();if(!/^\d{1,24}$/.test(id))throw Error('Enter a numeric Confluence page ID.');return id;}
-async function readPage(pageId:string):Promise<Source>{
+async function readPageDocument(pageId:string){
  const c=await api.asUser().requestConfluence(route`/wiki/api/v2/pages/${pageId}?body-format=atlas_doc_format`,{headers:{Accept:'application/json'}});
  if(!c.ok)throw Error(`Cannot read Confluence page (${c.status}). Check permissions and installation.`);
  const page=await c.json();const body=page.body?.atlas_doc_format?.value;
  if(!body)throw Error('Confluence page body unavailable.');
- return {kind:'Confluence',id:pageId,title:page.title,text:adfText(typeof body==='string'?JSON.parse(body):body)};
+ const document=typeof body==='string'?JSON.parse(body):body;
+ const source:Source={kind:'Confluence',id:pageId,title:page.title,text:adfText(document)};
+ return {source,document};
 }
+async function readPage(pageId:string):Promise<Source>{return (await readPageDocument(pageId)).source;}
+resolver.define('discoverIssues',async ({payload})=>{
+ const page=validatePage(payload?.pageId);
+ const [{document},info]=await Promise.all([readPageDocument(page),api.asUser().requestJira(route`/rest/api/3/serverInfo`,{headers:{Accept:'application/json'}})]);
+ if(!info.ok)throw Error('Unable to verify the Jira site for link discovery.');
+ const site=await info.json();
+ return discoverIssueLinks(document,[site.baseUrl,site.displayUrl]);
+});
 async function readIssue(key:string):Promise<Source>{
  const j=await api.asUser().requestJira(route`/rest/api/3/issue/${key}?fields=summary,description`,{headers:{Accept:'application/json'}});
  if(!j.ok)throw Error(`Unable to read Jira issue (${j.status}).`);
@@ -26,6 +38,14 @@ resolver.define('scanWorkspace',async ({payload,context})=>{
  const result=assemble(spec,issues,failures);
  const historySaved=await saveHistory(context.accountId,scanSummary(result,newHistoryId()));
  return {...result,historySaved};
+});
+resolver.define('analyzeIssue',async ({payload})=>{
+ if(payload?.confirmed!==true)throw Error('Confirm AI analysis before continuing.');
+ const page=validatePage(payload?.pageId),keys=parseIssueKeys(payload?.issueKey);
+ if(keys.length!==1)throw Error('Select one issue for AI analysis.');
+ const [reference,issue]=await Promise.all([readPage(page),readIssue(keys[0])]);
+ try{return {issueId:issue.id,...await analyzePair(reference,issue)};}
+ catch{throw Error('AI analysis unavailable or source too large. Your rule-based scan remains available.');}
 });
 resolver.define('requestReview',async ({payload,context})=>{
  if(payload?.confirmed!==true)throw Error('Explicit confirmation is required.');
