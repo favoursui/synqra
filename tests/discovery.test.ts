@@ -1,0 +1,13 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {discoverIssueLinks} from '../shared/discovery.ts';
+const site='https://synqra.atlassian.net';
+const card=(url:unknown)=>({type:'inlineCard',attrs:{url}});
+const link=(href:unknown)=>({type:'text',text:'View task',marks:[{type:'link',attrs:{href}}]});
+const doc=(...content:unknown[])=>({type:'doc',content:[{type:'paragraph',content}]});
+test('discovers inline cards, block cards and link marks in document order',()=>assert.deepEqual(discoverIssueLinks(doc(card(site+'/browse/CAD-1'),link('/browse/CAD-2'),{type:'blockCard',attrs:{url:site+'/browse/CAD-3?foo=1'}}),[site]),{keys:['CAD-1','CAD-2','CAD-3'],limited:false}));
+test('deduplicates and normalizes issue keys',()=>assert.deepEqual(discoverIssueLinks(doc(card(site+'/browse/cad-1'),link('/browse/CAD-1')),[site]).keys,['CAD-1']));
+test('ignores external, deceptive and malformed links',()=>assert.deepEqual(discoverIssueLinks(doc(...['https://evil.atlassian.net/browse/CAD-1','https://synqra.atlassian.net.evil.org/browse/CAD-2','//evil.org/browse/CAD-3','javascript:alert(1)','https://user@synqra.atlassian.net/browse/CAD-4',site+'/browse/CAD-5/more',site+'/wiki/browse/CAD-6',site+'/browse/CAD-7abc'].map(card)),[site]).keys,[]));
+test('only returns eight unique keys and reports omitted results',()=>assert.deepEqual(discoverIssueLinks(doc(...Array.from({length:10},(_,i)=>card('/browse/CAD-'+(i+1)))),[site]),{keys:Array.from({length:8},(_,i)=>'CAD-'+(i+1)),limited:true}));
+test('ignores unlinked mentions and empty or invalid site metadata',()=>{assert.deepEqual(discoverIssueLinks(doc({type:'text',text:'CAD-1'},card('/browse/CAD-2')),[]).keys,[]);assert.deepEqual(discoverIssueLinks(doc({type:'text',text:'CAD-1'}),[site]).keys,[]);assert.deepEqual(discoverIssueLinks(null,[site]),{keys:[],limited:false});});
+test('accepts a server-reported custom Jira domain',()=>assert.deepEqual(discoverIssueLinks(doc(card('https://jira.example.com/browse/PROJ-4')),[site,'https://jira.example.com']).keys,['PROJ-4']));

@@ -1,0 +1,16 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {boundedText,validateCandidates,responseText} from '../shared/semantic.mjs';
+const refText="Passwords must never be stored in plain text.";
+const issueText="Store passwords in plain text for debugging.";
+const valid={"topic":"Password storage","referenceQuote":"Passwords must never be stored in plain text.","issueQuote":"Store passwords in plain text for debugging.","reason":"The requirements conflict."};
+const json=(findings:unknown[])=>JSON.stringify({findings});
+test("accepts evidence from both sources",()=>assert.equal((()=>validateCandidates(json([valid]),refText,issueText).findings.length===1)(),true));
+test("rejects invented evidence",()=>assert.equal((()=>validateCandidates(json([{...valid,issueQuote:'Invented issue quote.'}]),refText,issueText).rejected===1)(),true));
+test("rejects identical evidence",()=>assert.equal((()=>validateCandidates(json([{...valid,issueQuote:refText}]),refText,refText).rejected===1)(),true));
+test("deduplicates repeated evidence",()=>assert.equal((()=>validateCandidates(json([valid,valid]),refText,issueText).findings.length===1)(),true));
+test("accepts an empty finding list",()=>assert.equal((()=>validateCandidates(json([]),refText,issueText).findings.length===0)(),true));
+test("rejects invalid JSON",()=>assert.equal((()=>{try{validateCandidates('bad',refText,issueText);return false}catch{return true}})(),true));
+test("rejects oversized inputs",()=>assert.equal((()=>{try{boundedText('a'.repeat(12001));return false}catch{return true}})(),true));
+test("rejects truncated model output",()=>assert.equal((()=>{try{responseText({choices:[{finish_reason:'length',message:{content:'{}'}}]});return false}catch{return true}})(),true));
+test("extracts text blocks",()=>assert.equal((()=>responseText({choices:[{finish_reason:'stop',message:{content:[{type:'text',text:'a'},{type:'text',text:'b'}]}}]})==='ab')(),true));

@@ -1,0 +1,14 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {pairInput,buildAgentPrompt,agentReport} from '../shared/rovo.mjs';
+const pair={"pageId":"10001","issueKey":"CAD-102"};
+const sample={"field":"api version","severity":"high","expected":"v2","actual":"v1","evidence":["API version: v2","API version: v1"],"text":"private document","id":"secret"};
+test("normalizes a valid pair",()=>assert.equal((()=>JSON.stringify(pairInput({pageId:' 10001 ',issueKey:'cad-102'}))===JSON.stringify(pair))(),true));
+test("rejects multiple issues",()=>assert.equal((()=>{try{pairInput({pageId:'10001',issueKey:'CAD-1,CAD-2'});return false;}catch{return true;}})(),true));
+test("rejects a URL as a page identifier",()=>assert.equal((()=>{try{pairInput({pageId:'https://example.org',issueKey:'CAD-1'});return false;}catch{return true;}})(),true));
+test("rejects nonstring identifiers",()=>assert.equal((()=>{try{pairInput({pageId:10001,issueKey:'CAD-1'});return false;}catch{return true;}})(),true));
+test("uses only validated identifiers in launch prompt",()=>assert.equal((()=>buildAgentPrompt({...pair,text:'secret'}).includes('CAD-102')&&!buildAgentPrompt({...pair,text:'secret'}).includes('secret'))(),true));
+test("returns evidence without raw document text or internal IDs",()=>assert.equal((()=>{const report=agentReport(pair,[sample]);return report.findings[0].referenceQuote==='API version: v2'&&!JSON.stringify(report).includes('private document')&&!JSON.stringify(report).includes('secret');})(),true));
+test("omits oversized evidence and reports the omission",()=>assert.equal((()=>{const report=agentReport(pair,[{...sample,evidence:['x'.repeat(501),'API version: v1']}]);return report.omitted===1&&report.findings.length===0;})(),true));
+test("caps report size at five findings",()=>assert.equal((()=>agentReport(pair,Array(7).fill(sample)).omitted===2)(),true));
+test("does not imply alignment when no findings exist",()=>assert.equal((()=>agentReport(pair,[]).limitations.includes('No findings does not establish alignment'))(),true));
