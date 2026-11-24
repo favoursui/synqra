@@ -1,4 +1,4 @@
-export type Source = { kind: 'Jira' | 'Confluence'; id: string; title: string; text: string };
+export type Source = { kind: 'Jira' | 'Confluence'; id: string; title: string; text: string; resourceId?: string };
 export type Conflict = { id: string; field: string; expected: string; actual: string; evidence: [string, string]; severity: 'high' | 'medium'; };
 // Only compare explicitly paired resources with exact, unique structured fields.
 // Unknown units, missing fields and ambiguous duplicates are not treated as matches.
