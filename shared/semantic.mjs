@@ -23,3 +23,11 @@ export function responseText(response){
  if(Array.isArray(content)&&content.every(p=>p?.type==='text'&&typeof p.text==='string'))return content.map(p=>p.text).join('');
  throw Error('Invalid AI response.');
 }
+
+export function chooseHaiku(response){
+ if(!Array.isArray(response?.models))throw Error('Model availability unavailable.');
+ const supported=['claude-haiku-5-5','claude-haiku-4-5-20251001'];
+ const model=supported.find(id=>response.models.some(m=>m?.model===id&&typeof m.status==='string'&&m.status.toLowerCase()==='active'));
+ if(!model)throw Error('No supported active Haiku model.');
+ return model;
+}

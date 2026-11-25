@@ -2,7 +2,7 @@
 
 ## Verified baseline
 
-The v0.10 GitHub Actions run completed shared tests, dependency installation and a frontend production build: https://github.com/favoursui/synqra/actions/runs/45302590951. The v0.11 run (https://github.com/favoursui/synqra/actions/runs/45303027857) also passed all 83 tests and the frontend build, but failed the runtime dependency audit. The v0.11.1 remediation must pass CI before deployment. This is not a Forge deployment. Check the CI results for the current commit separately.
+The v0.10 GitHub Actions run completed shared tests, dependency installation and a frontend production build: https://github.com/favoursui/synqra/actions/runs/45302590951. The v0.11 run (https://github.com/favoursui/synqra/actions/runs/45303027857) also passed all 83 tests and the frontend build, but failed the runtime dependency audit. The v0.11.1 run passed 83 tests and the frontend build, but five high-severity findings remained. The nested ProseMirror fix and subsequent changes must pass CI before deployment. This is not a Forge deployment. Check the CI results for the current commit separately.
 
 ## Before deployment
 
@@ -13,6 +13,24 @@ The v0.10 GitHub Actions run completed shared tests, dependency installation and
 - Install the Forge CLI and authenticate locally using your own account. Never paste API tokens into chat or commit them. Register the app once if no app ID exists; preserve the registered ID on subsequent updates.
 - Run forge lint and fix every blocking error. Deploy to development only after lint succeeds.
 - Install into required Jira first, then connect optional Confluence on the same site. Review requested scopes and the LLM module before approving an upgrade. Do not deploy production for this test.
+
+## Owner-controlled development deployment
+
+From a reviewed checkout containing the committed lockfile, run:
+
+~~~sh
+npm install -g @forge/cli@latest
+forge login
+forge register Synqra
+npm run verify:forge
+npm run deploy:dev
+forge install --environment development --site YOUR-SITE.atlassian.net --product jira
+forge install --environment development --site YOUR-SITE.atlassian.net --product confluence
+~~~
+
+Skip register if an app ID already exists. Registration changes the manifest; preserve that ID. For a previously installed app use the CLI upgrade flow, not another registration. Never run the commands against production during testing. Review all requested permissions. The helper command refuses to deploy if any local gate fails and does not install into a site. Use the official CLI install documentation if optional product enablement requires a different flow in your tenant.
+
+Official references reviewed November 25, 2026: https://developer.atlassian.com/platform/forge/cli-reference/register/, https://developer.atlassian.com/platform/forge/cli-reference/install/, https://developer.atlassian.com/platform/forge/cli-reference/deploy/, https://developer.atlassian.com/platform/forge/app-compatibility/, https://developer.atlassian.com/platform/forge/runtime-reference/forge-llms-models/, https://developer.atlassian.com/platform/forge/manifest-reference/modules/rovo-action/, https://developer.atlassian.com/platform/forge/events-reference/confluence/, https://developer.atlassian.com/platform/forge/storage-reference/kvs-api/.
 
 ## Live acceptance tests
 

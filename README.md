@@ -4,7 +4,7 @@
 
 A context-integrity application for Atlassian workspaces. Synqra compares a user-selected Confluence reference with related Jira issues and surfaces evidence-backed potential contradictions before teams implement outdated requirements.
 
-## Status: v0.11.1: Release hardening
+## Status: v0.12: Development release preparation
 
 - Compare one explicitly selected Confluence page with up to eight Jira issues, using bounded concurrent reads and current-user permissions.
 - Inspect and filter potential mismatches, see source evidence, and explore a graph of explicitly selected relationships.
@@ -54,7 +54,7 @@ References: https://developer.atlassian.com/platform/forge/manifest-reference/mo
 
 ## AI conflict analysis
 
-After a live scan, select one readable Jira issue and explicitly opt in to AI analysis. Synqra re-fetches both sources as the current user and sends their text to Atlassian-hosted Forge LLMs using Claude Haiku. Each source is limited to 12,000 characters and the model can return at most four candidates. Exact quotes are verified against both source texts; this does not prove the interpretation is correct. Invalid or incomplete responses are rejected. AI findings are read-only, not stored in personal history, and cannot trigger comments or issue edits. The rule-based scan remains available if AI fails. No model calls occur in demo mode. Forge LLM usage can incur charges; the new manifest module requires installation upgrade approval. See https://developer.atlassian.com/platform/forge/runtime-reference/forge-llms-api-reference/.
+After a live scan, select one readable Jira issue and explicitly opt in to AI analysis. Synqra re-fetches both sources as the current user and sends their text to Atlassian-hosted Forge LLMs using an active supported Claude Haiku model selected from the Forge model list. If neither supported Haiku model is active, the analysis fails closed rather than silently selecting a higher-priced model. Each source is limited to 12,000 characters and the model can return at most four candidates. Exact quotes are verified against both source texts; this does not prove the interpretation is correct. Invalid or incomplete responses are rejected. AI findings are read-only, not stored in personal history, and cannot trigger comments or issue edits. The rule-based scan remains available if AI fails. No model calls occur in demo mode. Forge LLM usage can incur charges; the new manifest module requires installation upgrade approval. See https://developer.atlassian.com/platform/forge/runtime-reference/forge-llms-api-reference/.
 
 ## Find linked Jira issues
 
@@ -96,6 +96,8 @@ forge install --site YOUR-SITE.atlassian.net --product confluence
 ~~~
 
 Open Synqra from Jira's Apps navigation. In Live mode enter a numeric Confluence page ID and one to eight Jira issue keys separated by commas. Grant user consent when prompted. This version adds `write:jira-work` for review comments; upgrade an existing installation after deploying (`forge install --upgrade` with the appropriate site/product flags). Ensure the current user has read access to both sources. Check the current Forge CLI help for environment and product flags if needed. The app ID in the generated manifest is not a credential.
+
+The development release commands require the reviewed lockfile and the real registered app ID. Run `npm run verify:forge` to install the locked dependencies, run tests and audit, build, and lint without deploying. Run `npm run deploy:dev` to repeat those gates and deploy only to development. The owner must complete Forge login, registration, installation and consent locally. See the [development release checklist](docs/RELEASE_CHECKLIST.md).
 
 ## Demo workflow
 

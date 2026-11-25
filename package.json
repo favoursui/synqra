@@ -1,11 +1,13 @@
 {
   "name": "synqra",
-  "version": "0.11.2",
+  "version": "0.12.0",
   "private": true,
   "scripts": {
     "dev": "vite --config web/vite.config.ts",
     "build": "vite build --config web/vite.config.ts",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "verify:forge": "node scripts/development-release.mjs",
+    "deploy:dev": "node scripts/development-release.mjs --deploy"
   },
   "engines": {
     "node": ">=22.13.0"
