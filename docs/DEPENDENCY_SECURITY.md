@@ -17,3 +17,7 @@ CI uploads the generated lockfile for review even when a subsequent build or aud
 ## Follow-up on v0.11.2
 
 The v0.11.1 run (https://github.com/favoursui/synqra/actions/runs/45630278607) passed 83 tests and the build. The downloaded lockfile confirmed glob 14.0.2 and minimatch 11.0.1, but retained prosemirror-view 1.41.5 under @atlaskit/adf-schema-generator. The audit still reported five high-severity findings. v0.11.2 targets the remaining nested dependency explicitly and applies an unqualified prosemirror-view override. Direct runtime and development dependencies are pinned to their versions observed in that lockfile. CI now checks all resolved ProseMirror copies and direct pins before building. Audit remains mandatory. This patch has not yet passed CI; do not deploy until verified. The earlier lockfile is not suitable for committing because it includes the vulnerable nested copy.
+
+## Verified resolution
+
+The v0.11.2 follow-up passed the dependency pin check and reported zero runtime vulnerabilities. The committed v0.12 lockfile was recovered from the audited CI output, checked for public registry URLs and integrity metadata, and verified with npm ci in https://github.com/favoursui/synqra/actions/runs/45632984753. The following docs commit also passed CI (https://github.com/favoursui/synqra/actions/runs/45633084599). This does not establish that all dependencies are free of vulnerabilities, or that Forge runtime behavior has been tested. Continue using npm ci and the audit gate.
