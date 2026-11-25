@@ -26,6 +26,8 @@ jobs:
           path: package-lock.json
           if-no-files-found: error
           retention-days: 7
+      - name: Verify resolved dependency versions
+        run: node scripts/check-resolved-dependencies.mjs
       - name: Build frontend
         run: npm run build
       - name: Audit runtime dependencies
