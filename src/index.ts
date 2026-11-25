@@ -11,6 +11,8 @@ import {makeRecord,currentState} from '../shared/tracking.mjs';
 import {saveTracked,listTracked,removeTracked} from './tracking';
 import {registerMonitoring,checkMonitoring} from './monitoring';
 export {recordSourceUpdate} from './monitoring';
+import {protectReview} from './review-guard';
+import {validateReviewBody} from '../shared/review-guard.mjs';
 const resolver=new Resolver();
 function validatePage(value:unknown){const id=String(value??'').trim();if(!/^\d{1,24}$/.test(id))throw Error('Enter a numeric Confluence page ID.');return id;}
 async function readPageDocument(pageId:string){
@@ -60,9 +62,14 @@ resolver.define('requestReview',async ({payload,context})=>{
  const finding=assemble(spec,[issue]).findings.find(f=>f.id===payload?.finding?.id);
  assertUnchanged(finding,payload?.finding);
  // Recompute the message from current authorized sources. Never accept arbitrary comment text.
- const response=await api.asUser().requestJira(route`/rest/api/3/issue/${issue.id}/comment`,{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({body:commentBody(reviewText(spec,finding))})});
- if(!response.ok)throw Error(`Review comment could not be confirmed (${response.status}). Check Jira comment permissions before retrying.`);
- const comment=await response.json();
+ const body=commentBody(validateReviewBody(reviewText(spec,finding)));
+ const comment=await protectReview(context.accountId,spec.id,issue.resourceId??'',finding,async ()=>{
+  const response=await api.asUser().requestJira(route`/rest/api/3/issue/${issue.id}/comment`,{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({body})});
+  if(!response.ok)throw Error('Review comment could not be confirmed. Check Jira before trying again. Duplicate protection may delay a retry.');
+  const value=await response.json();
+  if(!value?.id)throw Error('Review comment receipt unavailable. Check Jira before trying again.');
+  return value;
+ });
  const historySaved=await saveHistory(context.accountId,reviewSummary(newHistoryId(),new Date().toISOString()));
  return {commentId:String(comment.id),issueId:issue.id,historySaved};
 });

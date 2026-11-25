@@ -1,0 +1,15 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {reviewIdentity,validateReviewBody,guardedReview} from '../shared/review-guard.mjs';
+const account="user-1",page="10001",issue="9001",finding={"id":"10001:CAD-1:api version","field":"api version","expected":"v2","actual":"v1","evidence":["API version: v2","API version: v1"]};
+test("uses stable resource IDs rather than Jira issue keys",async()=>assert.equal(await (()=>reviewIdentity(account,page,issue,finding)===reviewIdentity(account,page,issue,{...finding,id:'10001:NEW-2:api version'}))(),true));
+test("separates accounts and source pairs",async()=>assert.equal(await (()=>reviewIdentity(account,page,issue,finding)!==reviewIdentity('user-2',page,issue,finding)&&reviewIdentity(account,page,issue,finding)!==reviewIdentity(account,page,'9002',finding))(),true));
+test("changes identity when evidence changes",async()=>assert.equal(await (()=>reviewIdentity(account,page,issue,finding)!==reviewIdentity(account,page,issue,{...finding,evidence:['API version: v3','API version: v1']}))(),true));
+test("rejects unidentified users",async()=>assert.equal(await (()=>{try{reviewIdentity('unidentified',page,issue,finding);return false}catch{return true}})(),true));
+test("rejects nonnumeric stable issue IDs",async()=>assert.equal(await (()=>{try{reviewIdentity(account,page,'CAD-1',finding);return false}catch{return true}})(),true));
+test("rejects malformed evidence",async()=>assert.equal(await (()=>{try{reviewIdentity(account,page,issue,{...finding,evidence:['only one']});return false}catch{return true}})(),true));
+test("allows bounded comment body",async()=>assert.equal(await (()=>validateReviewBody('Review requested')==='Review requested')(),true));
+test("rejects oversized comment body",async()=>assert.equal(await (()=>{try{validateReviewBody('a'.repeat(8001));return false}catch{return true}})(),true));
+test("reservation failure prevents posting",async()=>assert.equal(await (async()=>{let posted=false;try{await guardedReview(async()=>{throw Error('locked')},async()=>{posted=true});return false}catch{return !posted}})(),true));
+test("allows one concurrent request per reservation",async()=>assert.equal(await (async()=>{let reserved=false,posts=0;const reserve=async()=>{if(reserved)throw Error('locked');reserved=true};const post=async()=>{posts++;return 'created'};const result=await Promise.allSettled([guardedReview(reserve,post),guardedReview(reserve,post)]);return posts===1&&result.filter(r=>r.status==='fulfilled').length===1})(),true));
+test("ambiguous post failure does not release reservation",async()=>assert.equal(await (async()=>{let reserved=false,posts=0;const reserve=async()=>{if(reserved)throw Error('locked');reserved=true};const post=async()=>{posts++;throw Error('timeout')};await Promise.allSettled([guardedReview(reserve,post)]);await Promise.allSettled([guardedReview(reserve,post)]);return reserved&&posts===1})(),true));

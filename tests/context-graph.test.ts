@@ -1,0 +1,15 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {buildContextGraph,filterGraph,graphSelection,graphCounts} from '../shared/context-graph.mjs';
+const scan={"spec":{"id":"10001","title":"Trading spec","text":"private source"},"issues":[{"id":"CAD-1","title":"Swap engine"},{"id":"CAD-2","title":"Session timeout"}],"findings":[{"id":"f1","issueId":"CAD-1","severity":"high"},{"id":"f2","issueId":"CAD-1","severity":"medium"},{"id":"orphan","issueId":"CAD-9","severity":"high"}],"failures":[{"issueId":"CAD-3","message":"Forbidden"}]};
+const nodes=buildContextGraph(scan).nodes;
+test("includes read and unavailable issues",()=>assert.equal((()=>nodes.length===3&&nodes[2].state==='unavailable')(),true));
+test("distinguishes no findings from unavailable",()=>assert.equal((()=>nodes[1].state==='none_detected'&&nodes[2].state==='unavailable')(),true));
+test("groups findings by issue and excludes orphan findings",()=>assert.equal((()=>nodes[0].findings.length===2&&nodes[0].high===1&&nodes[0].medium===1)(),true));
+test("does not duplicate issues or override readable issues with failures",()=>assert.equal((()=>buildContextGraph({...scan,issues:[...scan.issues,scan.issues[0]],failures:[...scan.failures,{issueId:'CAD-1'}]}).nodes.length===3)(),true));
+test("filters by severity and search",()=>assert.equal((()=>filterGraph(nodes,'high','swap').length===1&&filterGraph(nodes,'high','session').length===0&&filterGraph(nodes,'medium','CAD-1').length===1)(),true));
+test("supports case insensitive search and unavailable filter",()=>assert.equal((()=>filterGraph(nodes,'unavailable',' cad-3 ').length===1)(),true));
+test("clears hidden selections instead of selecting another issue",()=>assert.equal((()=>graphSelection(filterGraph(nodes,'unavailable',''),'CAD-1')===null)(),true));
+test("summarizes only represented findings",()=>assert.equal((()=>JSON.stringify(graphCounts(nodes))===JSON.stringify({total:3,withFindings:1,unavailable:1,findings:2}))(),true));
+test("does not include raw reference text in graph metadata",()=>assert.equal((()=>!JSON.stringify(buildContextGraph(scan).reference).includes('private source'))(),true));
+test("handles an empty scan",()=>assert.equal((()=>graphCounts(buildContextGraph({...scan,issues:[],failures:[],findings:[]}).nodes).total===0)(),true));
