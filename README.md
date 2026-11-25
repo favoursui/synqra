@@ -4,7 +4,7 @@
 
 A context-integrity application for Atlassian workspaces. Synqra compares a user-selected Confluence reference with related Jira issues and surfaces evidence-backed potential contradictions before teams implement outdated requirements.
 
-## Status: v0.11: Release hardening
+## Status: v0.11.1: Release hardening
 
 - Compare one explicitly selected Confluence page with up to eight Jira issues, using bounded concurrent reads and current-user permissions.
 - Inspect and filter potential mismatches, see source evidence, and explore a graph of explicitly selected relationships.
@@ -150,4 +150,4 @@ Submit changes via a feature branch and pull request. Include the implementation
 
 ## Verification
 
-The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. Ten monitoring helper checks passed in the development runtime. Ten context-map helper checks passed in the development runtime. Five new presentation helper checks passed in the development runtime. The v0.10 GitHub Actions run passed the full shared test suite, dependency installation and frontend production build. Eleven new review guard checks passed in the development runtime. CI for v0.11, Forge lint, deployment and live API calls require separate verification.
+The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. Ten monitoring helper checks passed in the development runtime. Ten context-map helper checks passed in the development runtime. Five new presentation helper checks passed in the development runtime. The v0.10 GitHub Actions run passed the full shared test suite, dependency installation and frontend production build. Eleven new review guard checks passed in the development runtime. The v0.11 CI run passed all 83 tests and the frontend build, but the dependency audit failed (11 findings: 5 high, 6 moderate). v0.11.1 adds version-scoped overrides for patched transitive dependencies; its CI results, Forge lint, deployment and live API calls require separate verification. See [dependency security notes](docs/DEPENDENCY_SECURITY.md).
