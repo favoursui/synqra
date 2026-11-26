@@ -71,7 +71,7 @@ Use Node.js 22.13+ and npm.
 ~~~sh
 git clone https://github.com/favoursui/synqra.git
 cd synqra
-npm install
+npm ci
 npm test
 npm run dev
 ~~~
@@ -131,7 +131,7 @@ Scan the pair. Review the three findings and their evidence. Preview a review co
 
 ## Next milestones
 
-1. Verify install, permissions, live scan, and frontend build in the development environment; commit the generated dependency lockfile.
+1. Verify Forge lint, installation, permissions and live scans in the development environment. The dependency lockfile is committed and its installation has passed CI.
 2. Verify personal history and saved findings on a live Forge installation.
 3. Verify link discovery against real Confluence pages; add additional relationship sources.
 4. Verify Forge LLMs and the Rovo agent on a live installation.
@@ -152,4 +152,4 @@ Submit changes via a feature branch and pull request. Include the implementation
 
 ## Verification
 
-The previous 20 tests passed locally. Nine additional semantic validation checks passed in the development runtime. The semantic test file is included for Node test execution. Nine Rovo helper checks also passed in the development runtime. Nine saved-finding helper checks passed in the development runtime. Ten monitoring helper checks passed in the development runtime. Ten context-map helper checks passed in the development runtime. Five new presentation helper checks passed in the development runtime. The v0.10 GitHub Actions run passed the full shared test suite, dependency installation and frontend production build. Eleven new review guard checks passed in the development runtime. The v0.11 CI run passed all 83 tests and the frontend build, but the dependency audit failed (11 findings: 5 high, 6 moderate). v0.11.1 adds version-scoped overrides for patched transitive dependencies; its CI results, Forge lint, deployment and live API calls require separate verification. See [dependency security notes](docs/DEPENDENCY_SECURITY.md).
+The v0.12 release-readiness branch passed all 87 tests, locked dependency installation, frontend build and runtime audit (zero findings at the time of the run): https://github.com/favoursui/synqra/actions/runs/45633084599. CI also includes an offline backend compilation check on subsequent commits. See [dependency security notes](docs/DEPENDENCY_SECURITY.md), the [development release checklist](docs/RELEASE_CHECKLIST.md), [demo plan](docs/DEMO.md) and [submission draft](docs/DEVPOST_DRAFT.md). The registered Forge app ID, Forge lint, deployment, live integrations, actual video and submission remain unverified or incomplete. No production readiness claim is made.

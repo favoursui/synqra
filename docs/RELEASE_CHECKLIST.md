@@ -2,13 +2,13 @@
 
 ## Verified baseline
 
-The v0.10 GitHub Actions run completed shared tests, dependency installation and a frontend production build: https://github.com/favoursui/synqra/actions/runs/45302590951. The v0.11 run (https://github.com/favoursui/synqra/actions/runs/45303027857) also passed all 83 tests and the frontend build, but failed the runtime dependency audit. The v0.11.1 run passed 83 tests and the frontend build, but five high-severity findings remained. The nested ProseMirror fix and subsequent changes must pass CI before deployment. This is not a Forge deployment. Check the CI results for the current commit separately.
+The v0.10 GitHub Actions run completed shared tests, dependency installation and a frontend production build: https://github.com/favoursui/synqra/actions/runs/45302590951. The v0.11 run (https://github.com/favoursui/synqra/actions/runs/45303027857) also passed all 83 tests and the frontend build, but failed the runtime dependency audit. The v0.11.1 run passed 83 tests and the frontend build, but five high-severity findings remained. The v0.12 main run and subsequent locked-installation run passed all 87 tests, production frontend build and runtime audit with zero findings. See https://github.com/favoursui/synqra/actions/runs/45633084599. Subsequent changes require their own CI check. This is not a Forge deployment. Check the CI results for the current commit separately.
 
 ## Before deployment
 
 - Merge the reviewed feature PRs into main.
-- Confirm Node 22 and install dependencies. Generate and review package-lock.json (CI also uploads the resolved lockfile), then commit it in a separate review; use npm ci after the lockfile is committed. Verify dependency overrides against the Forge runtime, not just the frontend build.
-- Run npm test, npm run build and npm audit --omit=dev --audit-level=high.
+- Confirm Node 22 and install dependencies with npm ci. The reviewed lockfile is committed and has passed CI. Verify dependency overrides against the Forge runtime, not just the frontend build.
+- Run npm test, node scripts/check-backend.mjs, npm run build and npm audit --omit=dev --audit-level=high. The offline backend check is not a replacement for Forge lint.
 - Create an Atlassian developer site with Jira and Confluence; enable Rovo if available.
 - Install the Forge CLI and authenticate locally using your own account. Never paste API tokens into chat or commit them. Register the app once if no app ID exists; preserve the registered ID on subsequent updates.
 - Run forge lint and fix every blocking error. Deploy to development only after lint succeeds.

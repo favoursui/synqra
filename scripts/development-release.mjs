@@ -16,6 +16,7 @@ function run(command,params){
 run('npm',['ci','--no-audit','--no-fund']);
 run('node',['scripts/check-resolved-dependencies.mjs']);
 run('npm',['test']);
+run('node',['scripts/check-backend.mjs']);
 run('npm',['run','build']);
 run('npm',['audit','--omit=dev','--audit-level=high']);
 run('forge',['lint','--environment','development']);
