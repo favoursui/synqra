@@ -1,4 +1,4 @@
-import {MAX_ISSUES} from './workflow.ts';
+import {MAX_ISSUES} from './workflow';
 export type DiscoveryResult={keys:string[];limited:boolean};
 type Node={type?:string;attrs?:{url?:unknown;href?:unknown};marks?:Node[];content?:unknown[]};
 // Only use explicit Jira links. Never fetch a URL supplied by a document.
@@ -9,7 +9,7 @@ export function discoverIssueLinks(doc:unknown,siteUrls:unknown[]):DiscoveryResu
  function add(value:unknown){
   if(typeof value!=='string'||value.length>2048||!origins.size)return;
   try{
-   const u=value.startsWith('/browse/')?new URL(value,[...origins][0]):new URL(value);
+   const u=value.startsWith('/browse/')?new URL(value,Array.from(origins)[0]):new URL(value);
    if(u.protocol!=='https:'||u.username||u.password||!origins.has(u.origin))return;
    const match=u.pathname.match(/^\/browse\/([A-Z][A-Z0-9_]{0,29}-\d{1,12})\/?$/i);
    if(!match)return;const key=match[1].toUpperCase();
@@ -24,5 +24,5 @@ export function discoverIssueLinks(doc:unknown,siteUrls:unknown[]):DiscoveryResu
   if(Array.isArray(n.marks))for(const m of n.marks){if(m?.type==='link')add(m.attrs?.href);}
   if(Array.isArray(n.content)){for(let i=n.content.length-1;i>=0;i--)stack.push(n.content[i]);}
  }
- return {keys:[...keys],limited};
+ return {keys:Array.from(keys),limited};
 }

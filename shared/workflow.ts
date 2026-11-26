@@ -1,10 +1,10 @@
-import {compare,type Source,type Conflict} from './engine.ts';
+import {compare,type Source,type Conflict} from './engine';
 export const MAX_ISSUES=8;
 export type Finding=Conflict & {issueId:string; issueTitle:string};
 export type ScanResult={spec:Source;issues:Source[];findings:Finding[];failures:{issueId:string;message:string}[];scannedAt:string;historySaved?:boolean};
 export function parseIssueKeys(value:unknown):string[]{
  if(typeof value!=='string')throw Error('Enter Jira issue keys.');
- const keys=[...new Set(value.trim().toUpperCase().split(/[\s,]+/).filter(Boolean))];
+ const keys=Array.from(new Set(value.trim().toUpperCase().split(/[\s,]+/).filter(Boolean)));
  if(!keys.length||keys.length>MAX_ISSUES||keys.some(k=>!/^[A-Z][A-Z0-9_]{0,29}-\d{1,12}$/.test(k)))throw Error(`Enter 1 to ${MAX_ISSUES} valid Jira issue keys, separated by commas.`);
  return keys;
 }
