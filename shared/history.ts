@@ -1,4 +1,4 @@
-import type { ScanResult } from './workflow.ts';
+import type { ScanResult } from './workflow';
 export const HISTORY_LIMIT = 20;
 export const RETENTION_DAYS = 30;
 export type HistoryEntry = {

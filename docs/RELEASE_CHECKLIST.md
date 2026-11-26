@@ -63,3 +63,7 @@ Record the actual outcomes, the tested commit SHA, site/environment (no secrets)
 - https://developer.atlassian.com/platform/forge/cli-reference/lint/
 - https://developer.atlassian.com/platform/forge/cli-reference/register/
 - https://developer.atlassian.com/platform/forge/storage-reference/kvs-api/
+
+## Forge bundler compatibility
+
+A development deployment passed Forge lint but failed packaging with TS5097 (explicit .ts imports) and TS2802 (Set iteration target). The compatibility patch uses extensionless shared imports, Array.from for Set conversion, and a backend tsconfig targeting ES2022. Tests are bundled with the locked esbuild copy before Node executes them, so shared imports resolve consistently. CI installs dependencies before testing and performs a real TypeScript no-emit check in addition to the offline bundle check. This patch still requires a successful Forge deployment to verify actual packaging. Preserve your existing registered app ID when pulling updates; do not register again.

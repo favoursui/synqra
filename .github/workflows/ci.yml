@@ -15,10 +15,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run shared tests
-        run: npm test
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
+      - name: Run shared tests
+        run: npm test
       - name: Save resolved dependency lockfile
         uses: actions/upload-artifact@v4
         with:

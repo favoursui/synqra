@@ -1,9 +1,12 @@
 import {createRequire} from 'node:module';
 import {existsSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
 // Vite already depends on esbuild. Resolve its locked copy rather than install another tool.
 const require=createRequire(import.meta.url);
 const viteRequire=createRequire(require.resolve('vite/package.json'));
 const {build}=viteRequire('esbuild');
+const typecheck=spawnSync(process.execPath,[require.resolve('typescript/bin/tsc'),'--noEmit','-p','tsconfig.json'],{stdio:'inherit'});
+if(typecheck.error||typecheck.status!==0)throw Error('Backend TypeScript check failed.');
 const result=await build({
  entryPoints:['src/index.ts'],
  bundle:true,platform:'node',target:'node22',format:'cjs',

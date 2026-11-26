@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite --config web/vite.config.ts",
     "build": "vite build --config web/vite.config.ts",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test": "node scripts/test.mjs",
     "verify:forge": "node scripts/development-release.mjs",
     "deploy:dev": "node scripts/development-release.mjs --deploy"
   },
