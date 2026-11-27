@@ -1,0 +1,60 @@
+name: Deploy Synqra to Forge development
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: synqra-forge-development
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        run: npm ci --include=dev --no-audit --no-fund
+      - name: Verify and build
+        run: |
+          node scripts/check-resolved-dependencies.mjs
+          npm test
+          node scripts/check-backend.mjs
+          npm run build
+          npm audit --omit=dev --audit-level=high
+      - name: Install Forge CLI
+        run: |
+          npm install --global @forge/cli@16.0.0
+          forge settings set usage-analytics false
+      - name: Set registered app ID in runner manifest
+        env:
+          FORGE_APP_ID: ${{ vars.FORGE_APP_ID }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync, writeFileSync} from 'node:fs';
+          const id = process.env.FORGE_APP_ID?.trim();
+          if (!/^ari:cloud:ecosystem::app\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id ?? '')) {
+            throw Error('Set the FORGE_APP_ID repository variable to your full registered app ARI.');
+          }
+          const path = 'manifest.yml';
+          const manifest = readFileSync(path, 'utf8');
+          const marker = '  # Run forge register to populate the app ID under your Atlassian account.';
+          if (!manifest.includes(marker) || /^  id:/m.test(manifest)) throw Error('Unexpected manifest registration state.');
+          writeFileSync(path, manifest.replace(marker, '  id: ' + id));
+          NODE
+      - name: Deploy registered development app
+        env:
+          FORGE_EMAIL: ${{ secrets.FORGE_EMAIL }}
+          FORGE_API_TOKEN: ${{ secrets.FORGE_API_TOKEN }}
+          FORGE_NON_INTERACTIVE: 'on'
+        run: |
+          if [ -z "$FORGE_EMAIL" ] || [ -z "$FORGE_API_TOKEN" ]; then
+            echo "::error::Set FORGE_EMAIL and FORGE_API_TOKEN in repository Actions secrets."
+            exit 1
+          fi
+          forge deploy --environment development --non-interactive
