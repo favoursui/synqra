@@ -3,6 +3,8 @@ import {existsSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 // Vite already depends on esbuild. Resolve its locked copy rather than install another tool.
 const require=createRequire(import.meta.url);
+const nodeTypes=require('@types/node/package.json');
+if(!nodeTypes.version.startsWith('22.'))throw Error('Expected Node 22 type declarations.');
 const viteRequire=createRequire(require.resolve('vite/package.json'));
 const {build}=viteRequire('esbuild');
 const typecheck=spawnSync(process.execPath,[require.resolve('typescript/bin/tsc'),'--noEmit','-p','tsconfig.json'],{stdio:'inherit'});
