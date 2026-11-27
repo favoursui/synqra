@@ -71,3 +71,14 @@ A development deployment passed Forge lint but failed packaging with TS5097 (exp
 ## Node runtime type declarations
 
 Local Forge packaging and CI reported TS2307 for node:crypto. Pin @types/node 22.19.0 in devDependencies and include its undici-types dependency in the lockfile. Explicitly include Node types in the backend tsconfig. Lock entries use public npm package metadata from the Microsoft vscode-proxy-agent lockfile; npm ci must verify package integrity and compilation. No runtime cryptography, manifest registration, or storage identities change. Use npm ci including devDependencies before building or deploying. Actual Forge packaging still needs to be retried on the registered development app.
+
+## GitHub-hosted development deployment
+
+If local artifact uploads time out after 30 seconds (Atlassian ECO-1791), use the manually triggered **Deploy Synqra to Forge development** workflow after merging the reviewed PR into main.
+
+1. Under repository Settings > Secrets and variables > Actions, create repository secrets FORGE_EMAIL and FORGE_API_TOKEN. Use the app owner's Atlassian email and a scoped Forge API token. Prefer a separate short-lived token for CI and revoke it when no longer required. Never put the token in a repository variable, commit, chat, or workflow input.
+2. Under the Variables tab create FORGE_APP_ID with the complete existing app ARI (ari:cloud:ecosystem::app/<uuid>) from the owner's local manifest. Do not register another app.
+3. Open Actions > Deploy Synqra to Forge development > Run workflow, select main, and explicitly trigger the run. No deployment occurs on pushes or pull requests. The workflow checks the locked dependencies, tests, backend, frontend build and audit before introducing the Forge credentials. It uses a pinned Forge CLI 16.0.0, writes the registered ID only to the runner's checkout, and retains Forge's default deployment checks. Credentials are scoped to the deployment step. It never installs the app, deploys to production, commits the app ID, or uploads verbose logs.
+4. If a pre-deployment approval is requested, review the scope and module changes before explicitly approving the relevant rule. Do not bypass verification to resolve an upload timeout. If deployment succeeds, install into the development Jira site and enable Confluence separately.
+
+This workflow is not a proven successful Forge deployment until its owner-triggered run succeeds. In a public repository, review changes to workflows and deployment code before merging; remove the CI token after testing. See https://developer.atlassian.com/platform/forge/set-up-cicd/ and https://jira.atlassian.com/browse/ECO-1791.
